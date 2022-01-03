@@ -3,7 +3,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Random;
 import java.util.Set;    
-import java.lang.management.ThreadMXBean;
+//import java.lang.management.ThreadMXBean;
 import com.google.common.collect.Sets; 
 //import static org.simmetrics.metrics.Math.intersection;
 
@@ -12,14 +12,16 @@ public class Filters {
 	/**
 	 * 
 	 */
-	public static int elements = 4; // m
+	public static int elements = 7; // m
+	public static int elements2= 10;
 	public static double p = 0.001;
-	//public static int bitsize  = (int) Math.ceil((elements * Math.log(1/p)) / Math.pow(Math.log(2), 2)); // n
-	public static int bitsize  = (int) Math.ceil(-1 * (elements * Math.log(p)) / Math.pow(Math.log(2), 2)); // n
-    //public static int bitsize = 100000000;
-	public static final int NUMBER_RANGE = 10; // random number range
+	public static int bitsize  = (int) Math.ceil((elements * Math.log(1/p)) / Math.pow(Math.log(2), 2));// n
+	//public static int bitsize2  = (int) Math.ceil((elements2 * Math.log(1/p)) / Math.pow(Math.log(2), 2)); // n
+
+	//public static int bitsize  = (int) Math.ceil(-1 * (elements * Math.log(p)) / Math.pow(Math.log(2), 2)); // n
+	public static final int NUMBER_RANGE =10; // random number range
     static BloomFilter filter1 = new BloomFilter(bitsize, elements); 
-    static BloomFilter filter2 = new BloomFilter(bitsize, elements);
+    static BloomFilter filter2 = new BloomFilter(bitsize, elements2);
     
 	public static void main(String[] args) {
 		Random random = new Random();
@@ -35,15 +37,22 @@ public class Filters {
         //System.out.println("filter "+ filter1);
         System.out.println("Set 1 Bloom filter:" + filter1.bloom);
         System.out.println("k:" + filter1.k);
+        System.out.println("k:" + filter2.k);
+
+        System.out.println("m size for set1: " + bitsize);
+        //System.out.println("m size for set2: " + bitsize2);
+
+
+        
         
         
         
         //*************************SET 2*************************************************
-        HashSet<Integer> set2 = new HashSet<Integer>(elements);
-        while(set2.size()< elements) {
+        HashSet<Integer> set2 = new HashSet<Integer>(elements2);
+        while(set2.size()< elements2) {
             while (set2.add(random.nextInt(NUMBER_RANGE)) != true);
         }
-        assert set2.size() == elements;
+        assert set2.size() == elements2;
         System.out.println("\nSet 2 = "+ set2);
         
         filter2.addAll(set2);
@@ -52,17 +61,22 @@ public class Filters {
         //*****************************intersection and union**************************************************
         Set<Integer> intersection = Sets.intersection(set1, set2);
         
-        //System.out.printf("\nIntersection of two Sets %s and %s in Java is %s %n",
+        //System.out.printf("\nIntersection of two Sets %s and %s in Java is %s %n", //PRINTS OUT THE INTERSECTION SET
           //      set1.toString(), set2.toString(), intersection.toString());
         
         Set<Integer> union = Sets.union(set1, set2);
-        //System.out.printf("Union of two Sets        %s and %s in Java is %s %n",
+        //System.out.printf("Union of two Sets        %s and %s in Java is %s %n", // PRINTS OUT THE UNION SET
           //              set1.toString(), set2.toString(), union.toString());
-        System.out.println("  ");
+        System.out.println("intsize- "+ intersection.size());
+        System.out.println("unionsize- "+ union.size());
+
         Double ActualJac= Double.valueOf(intersection.size()) / Double.valueOf(union.size());
-        System.out.println("Jaccard Coefficient:     " + Double.valueOf(intersection.size()) / Double.valueOf(union.size()));
+        //System.out.println("Jaccard Coefficient:     " + Double.valueOf(intersection.size()) / Double.valueOf(union.size()));
+        //System.out.println("Jaccard Coefficient of Plaintext:     " + ActualJac);
+
         filter1.bloom.trimToSize();
-        System.out.println("\n filter 1 size :                 " + filter1.bloom.size());
+        System.out.println("\n bit1 size :                 " + filter1.bloom.size());
+        System.out.println(" bit2 size :                 " + filter2.bloom.size() +"\n");
         
         
         int numzeros = 0;
@@ -70,41 +84,112 @@ public class Filters {
         Object[] array2 = filter2.bloom.toArray();
         //*************************************************************************************************************************
         
-        for(int i = 0; i < filter1.bloom.size(); i++ ) {
-			if (array1[i].equals(array2[i]) && array1[i].equals(0)) {
-        		numzeros++;
+        if (filter1.bloom.size() < filter2.bloom.size()) {
+        	for(int i = 0; i < filter1.bloom.size(); i++ ) {
+        		if (array1[i].equals(array2[i]) && array1[i].equals(0)) {
+        			numzeros++;
+        		}
         	}
         }
-			
-		float intervalue = 0;
-		for(int j = 0; j < filter1.bloom.size(); j++ ) {
-			if (array2[j].equals(1) && array1[j].equals(1)) {
-	        	intervalue++;
+        else {
+        	 for(int i = 0; i < filter2.bloom.size(); i++ ) {
+     			if (array1[i].equals(array2[i]) && array1[i].equals(0)) {
+             		numzeros++;
+             	}
+        	 }
+        }
+        float intervalue = 0;
+        if (filter1.bloom.size() < filter2.bloom.size()) {
+        	for(int j = 0; j < filter1.bloom.size(); j++ ) {
+        		if (array2[j].equals(1) && array1[j].equals(1)) {
+        			intervalue++;
+        		}
+        	}
+        }
+        else {
+        	for(int j = 0; j < filter2.bloom.size(); j++ ) {
+        		if (array2[j].equals(1) && array1[j].equals(1)) {
+        			intervalue++;
+        		}
+        	}
+        }
+		float unionvalue = 0;
+		if (filter1.bloom.size() < filter2.bloom.size()) {
+			for(int u = 0; u < filter1.bloom.size(); u++ ) {
+				if (array2[u].equals(1) || array1[u].equals(1)) {
+					unionvalue++;
+				}
+			}
+			for(int u = filter1.bloom.size(); u < filter2.bloom.size(); u++ ) {
+				if(array2[u].equals(1)) {
+					unionvalue++;
+				}
+			}
+		}	
+		else {
+			for(int t = 0; t < filter2.bloom.size(); t++ ) {
+				if (array2[t].equals(1) || array1[t].equals(1)) {
+					unionvalue++;
 			}
 		}
-		float unionvalue = 0;
-		for(int u = 0; u < filter1.bloom.size(); u++ ) {
-				if (array2[u].equals(1) || array1[u].equals(1)) {
-		        	unionvalue++;
+			for(int t = filter2.bloom.size(); t < filter1.bloom.size(); t++ ) {
+				if(array1[t].equals(1)) {
+					unionvalue++;
+				}
+			}
+		}
+			
+		float filter1size = 0;
+		for(int x = 0; x < filter1.bloom.size(); x++ ) {
+				if (array1[x].equals(1)) {
+		        	filter1size++;
 				}
 		}
-		
-		System.out.println("Unionvalue:      "+ unionvalue);
-		System.out.println("INtervalue:      "+ intervalue);
-        System.out.println("number of zeros: "+ numzeros);
+		float filter2size = 0;
+		for(int y = 0; y < filter2.bloom.size(); y++ ) {
+				if (array2[y].equals(1)) {
+					filter2size++;
+				}		
+		}
+		System.out.println("bloomfilter1 size:      "+ filter1size);
+		System.out.println("bloomfilter2 size:      "+ filter2size);
+		System.out.println("\nUnionvalue:      "+ unionvalue);
+		System.out.println("Intervalue:      "+ intervalue);
+		float Jac= (intervalue/unionvalue);
+		System.out.println("Jaccard test using loop:      "+ Jac);
+        System.out.println("number of zero pairs: "+ numzeros);
         
-        final float ApproxUnion= filter1.bloom.size() - (numzeros); // |Bx U By| = Length - (# of zero pairs)
-        final float ApproxInter= (filter1.bloom.size() + filter2.bloom.size()) - ApproxUnion; // |Set1|+|Set2|-|Bx U By|
+        final float ApproxUnion= filter2.bloom.size() - (numzeros); // |Bx U By| = Length - (# of zero pairs)
+        final float ApproxInter= (filter1size + filter2size) - ApproxUnion; // |Bx|+|By|-|Bx U By| //NOT WORKING 
         
+        // also |A U B| = |A| + |B| - |A n B|
         
         System.out.println("Approximate Union:        "+ ApproxUnion);
         System.out.println("Approximate Intersection: "+ ApproxInter);
         
-        System.out.println("JAC:                      "+ (ApproxInter/ApproxUnion));
-        float ApproxJac= (intervalue/ApproxUnion);
-        System.out.println("Better JAC:               "+ (intervalue/ApproxUnion));
+        float ApproxJac= (ApproxInter/ApproxUnion);
+        System.out.println("JAC test:                      "+ ApproxJac);
+        System.out.println("Jaccard Coefficient of Plaintext:                  " + ActualJac);
+
+        System.out.println("Jaccard Coefficient of BF using Algorithm          " + ApproxJac);
         
-        System.out.println("Accuracy: "+ ActualJac/ApproxJac);
+        if(ActualJac > Jac) {
+        	double PE = ((ActualJac-Jac)/ActualJac) *100;
+    		System.out.println("Percent Error:    "+ PE);
+
+        	}
+        else {
+        	double PE = ((Jac-ActualJac)/ActualJac) *100;
+    		System.out.println("Percent Error:    "+ PE);
+
+        }
+        	        
+        System.out.println("Accuracy:  "+ (ActualJac/ApproxJac)*100);
+        
+        System.out.println("k:" + filter1.k);
+        System.out.println("k:" + filter2.k);
+
+        
 	}
 	
 
@@ -126,5 +211,5 @@ public class Filters {
 
         return results;
     }*/
-        
+		     
 }
