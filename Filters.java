@@ -12,14 +12,14 @@ public class Filters {
 	/**
 	 * 
 	 */
-	public static int elements = 7; // m
-	public static int elements2= 10;
+	public static int elements = 900000; // m
+	public static int elements2= 600000;
 	public static double p = 0.001;
 	public static int bitsize  = (int) Math.ceil((elements * Math.log(1/p)) / Math.pow(Math.log(2), 2));// n
 	//public static int bitsize2  = (int) Math.ceil((elements2 * Math.log(1/p)) / Math.pow(Math.log(2), 2)); // n
 
 	//public static int bitsize  = (int) Math.ceil(-1 * (elements * Math.log(p)) / Math.pow(Math.log(2), 2)); // n
-	public static final int NUMBER_RANGE =10; // random number range
+	public static final int NUMBER_RANGE = 1000000; // random number range
     static BloomFilter filter1 = new BloomFilter(bitsize, elements); 
     static BloomFilter filter2 = new BloomFilter(bitsize, elements2);
     
@@ -32,19 +32,12 @@ public class Filters {
         }
         assert set1.size() == elements;
         
-	    System.out.println("Set 1 = "+ set1);
+	    //System.out.println("Set 1 = "+ set1);
         filter1.addAll(set1);
         //System.out.println("filter "+ filter1);
-        System.out.println("Set 1 Bloom filter:" + filter1.bloom);
+        //System.out.println("Set 1 Bloom filter:" + filter1.bloom);
         System.out.println("k:" + filter1.k);
-        System.out.println("k:" + filter2.k);
-
-        System.out.println("m size for set1: " + bitsize);
-        //System.out.println("m size for set2: " + bitsize2);
-
-
-        
-        
+        System.out.println("k:" + filter2.k);  
         
         
         //*************************SET 2*************************************************
@@ -53,10 +46,10 @@ public class Filters {
             while (set2.add(random.nextInt(NUMBER_RANGE)) != true);
         }
         assert set2.size() == elements2;
-        System.out.println("\nSet 2 = "+ set2);
+        //System.out.println("\nSet 2 = "+ set2);
         
         filter2.addAll(set2);
-        System.out.println("Set 2 Bloom filter:" + filter2.bloom);
+        //System.out.println("Set 2 Bloom filter:" + filter2.bloom);
          
         //*****************************intersection and union**************************************************
         Set<Integer> intersection = Sets.intersection(set1, set2);
@@ -173,7 +166,7 @@ public class Filters {
 
         System.out.println("Jaccard Coefficient of BF using Algorithm          " + ApproxJac);
         
-        if(ActualJac > Jac) {
+        /*if(ActualJac > Jac) {
         	double PE = ((ActualJac-Jac)/ActualJac) *100;
     		System.out.println("Percent Error:    "+ PE);
 
@@ -181,15 +174,10 @@ public class Filters {
         else {
         	double PE = ((Jac-ActualJac)/ActualJac) *100;
     		System.out.println("Percent Error:    "+ PE);
-
-        }
-        	        
-        System.out.println("Accuracy:  "+ (ActualJac/ApproxJac)*100);
-        
-        System.out.println("k:" + filter1.k);
-        System.out.println("k:" + filter2.k);
-
-        
+        }*/
+        double Percentdif = ((Math.abs(Jac-ActualJac) / ((Jac+ActualJac)/2)) *100);	
+        System.out.println("\nPercent Difference: " + Percentdif);
+        //System.out.println("Accuracy:  "+ (ActualJac/ApproxJac)*100);        
 	}
 	
 
