@@ -1,0 +1,190 @@
+package com.github.lovasoa.bloomfilter;
+import java.util.HashSet;
+import java.util.Random;
+import java.util.Set;
+
+//import java.lang.management.ThreadMXBean;
+import com.google.common.collect.Sets;
+//import static org.simmetrics.metrics.Math.intersection;
+
+
+public class Filters{
+	/**
+	 *
+	 */
+	public static final int NUMBER_RANGE = 100000; // random number range
+	public static int fixed_bitsize  = (int) (NUMBER_RANGE);
+	
+	static int min = 1;
+    static int max = NUMBER_RANGE;
+    static Random random1 = new Random();
+	public static int rngelements1 = random1.nextInt((max - min)+1) + min;
+	public static int rngelements2 = random1.nextInt((max - min)+1) + min;
+	
+    static BloomFilter filter1 = new BloomFilter(fixed_bitsize, rngelements1);
+    static BloomFilter filter2 = new BloomFilter(fixed_bitsize, rngelements2);
+    
+
+    
+	public static void main(String[] args) {
+		System.out.println("set 1 size: "+rngelements1);
+		System.out.println("set 2 size: "+rngelements2);
+		
+		Random random = new Random();
+        HashSet<Integer> set1 = new HashSet<>(rngelements1);
+
+        while(set1.size()< rngelements1) {
+            while (!set1.add(random.nextInt(max)));
+        }
+        assert set1.size() == rngelements1;
+        
+        
+
+	    //System.out.println("Set 1 = "+ set1);
+        filter1.addAll(set1);
+        //System.out.println("filter "+ filter1);
+        //System.out.println("Set 1 Bloom filter:" + filter1.bloom);
+        System.out.println("k hashes for set 1: " + filter1.k);
+        System.out.println("k hashes for set 2: " + filter2.k);
+
+
+        //*************************SET 2*************************************************
+        HashSet<Integer> set2 = new HashSet<>(rngelements2);
+        while(set2.size()< rngelements2) {
+            while (!set2.add(random.nextInt(max)));
+        }
+        assert set2.size() == rngelements2;
+        //System.out.println("\nSet 2 = "+ set2);
+
+        filter2.addAll(set2);
+        //System.out.println("Set 2 Bloom filter:" + filter2.bloom);
+
+        //*****************************intersection and union**************************************************
+        Set<Integer> intersection = Sets.intersection(set1, set2);
+
+        //System.out.printf("\nIntersection of two Sets %s and %s in Java is %s %n", //PRINTS OUT THE INTERSECTION SET
+          //      set1.toString(), set2.toString(), intersection.toString());
+
+        Set<Integer> union = Sets.union(set1, set2);
+        //System.out.printf("Union of two Sets        %s and %s in Java is %s %n", // PRINTS OUT THE UNION SET
+          //              set1.toString(), set2.toString(), union.toString());
+        System.out.println("intsize- "+ intersection.size());
+        System.out.println("unionsize- "+ union.size());
+
+        double ActualJac= Double.valueOf(intersection.size()) / Double.valueOf(union.size());
+        //System.out.println("Jaccard Coefficient:     " + Double.valueOf(intersection.size()) / Double.valueOf(union.size()));
+        //System.out.println("Jaccard Coefficient of Plaintext:     " + ActualJac);
+
+        filter1.bloom.trimToSize();
+        System.out.println("\n bit1 size :                 " + filter1.bloom.size());
+        System.out.println(" bit2 size :                 " + filter2.bloom.size() +"\n");
+
+
+        int numzeros = 0;
+        Object[] array1 = filter1.bloom.toArray();
+        Object[] array2 = filter2.bloom.toArray();
+        //*************************************************************************************************************************
+
+        if (filter1.bloom.size() < filter2.bloom.size()) {
+        	for(int i = 0; i < filter1.bloom.size(); i++ ) {
+        		if (array1[i].equals(array2[i]) && array1[i].equals(0)) {
+        			numzeros++;
+        		}
+        	}
+        }
+        else {
+        	 for(int i = 0; i < filter2.bloom.size(); i++ ) {
+     			if (array1[i].equals(array2[i]) && array1[i].equals(0)) {
+             		numzeros++;
+             	}
+        	 }
+        }
+        float intervalue = 0;
+        if (filter1.bloom.size() < filter2.bloom.size()) {
+        	for(int j = 0; j < filter1.bloom.size(); j++ ) {
+        		if (array2[j].equals(1) && array1[j].equals(1)) {
+        			intervalue++;
+        		}
+        	}
+        }
+        else {
+        	for(int j = 0; j < filter2.bloom.size(); j++ ) {
+        		if (array2[j].equals(1) && array1[j].equals(1)) {
+        			intervalue++;
+        		}
+        	}
+        }
+		float unionvalue = 0;
+		if (filter1.bloom.size() < filter2.bloom.size()) {
+			for(int u = 0; u < filter1.bloom.size(); u++ ) {
+				if (array2[u].equals(1) || array1[u].equals(1)) {
+					unionvalue++;
+				}
+			}
+			for(int u = filter1.bloom.size(); u < filter2.bloom.size(); u++ ) {
+				if(array2[u].equals(1)) {
+					unionvalue++;
+				}
+			}
+		}
+		else {
+			for(int t = 0; t < filter2.bloom.size(); t++ ) {
+				if (array2[t].equals(1) || array1[t].equals(1)) {
+					unionvalue++;
+			}
+		}
+			for(int t = filter2.bloom.size(); t < filter1.bloom.size(); t++ ) {
+				if(array1[t].equals(1)) {
+					unionvalue++;
+				}
+			}
+		}
+
+		float filter1size = 0;
+		for(int x = 0; x < filter1.bloom.size(); x++ ) {
+				if (array1[x].equals(1)) {
+		        	filter1size++;
+				}
+		}
+		float filter2size = 0;
+		for(int y = 0; y < filter2.bloom.size(); y++ ) {
+				if (array2[y].equals(1)) {
+					filter2size++;
+				}
+		}
+		System.out.println("bloomfilter1 size:      "+ filter1size);
+		System.out.println("bloomfilter2 size:      "+ filter2size);
+		//System.out.println("\nUnionvalue:      "+ unionvalue);
+		//System.out.println("Intervalue:      "+ intervalue);
+		float Jac= (intervalue/unionvalue);
+		//System.out.println("Jaccard test using loop:      "+ Jac);
+        System.out.println("number of zero pairs: "+ numzeros);
+
+        final float ApproxUnion= filter2.bloom.size() - (numzeros); // |Bx U By| = Length - (# of zero pairs)
+        final float ApproxInter= (filter1size + filter2size) - ApproxUnion; // |Bx|+|By|-|Bx U By|
+
+        // also |A U B| = |A| + |B| - |A n B|
+
+        System.out.println("\nApproximate Union:        "+ ApproxUnion);
+        System.out.println("Approximate Intersection: "+ ApproxInter);
+
+        float ApproxJac= (ApproxInter/ApproxUnion);
+        //System.out.println("JAC test:                      "+ ApproxJac);
+        System.out.println("Jaccard Coefficient of Plaintext:                  " + ActualJac);
+
+        System.out.println("Jaccard Coefficient of BF using Algorithm          " + ApproxJac);
+
+        double PE= (Math.abs(Jac - ActualJac)/ ActualJac)*100;
+        double Accuracynew = (Jac/ActualJac)*100;
+        double accuracy= 100.0 - PE;
+        double Percentdif = ((Math.abs(Jac-ActualJac) / ((Jac+ActualJac)/2)) *100);
+        double PDNew= 100-Percentdif;
+
+        System.out.println("\nPercent Difference: " + Percentdif);
+        System.out.println("Percent Error:      "+ PE);
+        System.out.println("Percent error new:  " + accuracy);
+        System.out.println("New Accuracy:       " + Accuracynew);
+        System.out.println("Percent diffe new:  " + PDNew);
+	}
+
+}
